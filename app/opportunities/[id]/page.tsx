@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 import PersonasTab from './PersonasTab'
 import DocumentosTab from './DocumentosTab'
+import InteligenciaTab from './InteligenciaTab'
 
 type Opportunity = {
   id: string
@@ -329,15 +330,7 @@ export default function OpportunityDetailPage() {
 
         {activeTab === 'personas' && <PersonasTab opportunityId={opp.id} />}
         {activeTab === 'documentos' && <DocumentosTab opportunityId={opp.id} />}
-
-        {( activeTab === 'inteligencia') && (
-          <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
-            <p className="text-sm text-gray-400 mb-1">
-              Aba {TABS.find(t => t.key === activeTab)?.label}
-            </p>
-            <p className="text-xs text-gray-400">Será implementada em seguida</p>
-          </div>
-        )}
+        {activeTab === 'inteligencia' && <InteligenciaTab opportunityId={opp.id} />}
       </div>
 
       {toast && (
