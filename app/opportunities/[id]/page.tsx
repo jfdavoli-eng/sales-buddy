@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
+import PersonasTab from './PersonasTab'
 
 type Opportunity = {
   id: string
@@ -281,7 +282,7 @@ export default function OpportunityDetailPage() {
                 Experiência com a empresa
               </p>
               <div className="bg-white border border-gray-200 rounded-xl p-3">
-                <p className="text-[13px] text-gray-600 leading-relaxed">
+                <p className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap">
                   {opp.company_experience || <span className="text-gray-300">Nenhuma experiência registrada</span>}
                 </p>
               </div>
@@ -298,7 +299,7 @@ export default function OpportunityDetailPage() {
                   </span>
                 </div>
                 <div className="bg-white border border-gray-200 rounded-xl p-3">
-                  <p className="text-[13px] text-gray-600 leading-relaxed">{opp.products_services}</p>
+                  <p className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap">{opp.products_services}</p>
                 </div>
               </div>
             )}
@@ -325,12 +326,14 @@ export default function OpportunityDetailPage() {
           </div>
         )}
 
-        {activeTab !== 'contexto' && (
+        {activeTab === 'personas' && <PersonasTab opportunityId={opp.id} />}
+
+        {(activeTab === 'documentos' || activeTab === 'inteligencia') && (
           <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
             <p className="text-sm text-gray-400 mb-1">
               Aba {TABS.find(t => t.key === activeTab)?.label}
             </p>
-            <p className="text-xs text-gray-400">Será implementada na próxima etapa</p>
+            <p className="text-xs text-gray-400">Será implementada em seguida</p>
           </div>
         )}
       </div>
