@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase-client'
 import PersonasTab from './PersonasTab'
 import DocumentosTab from './DocumentosTab'
 import InteligenciaTab from './InteligenciaTab'
+import InteligenciaHub from './InteligenciaHub'
 
 type Opportunity = {
   id: string
@@ -330,7 +331,7 @@ export default function OpportunityDetailPage() {
 
         {activeTab === 'personas' && <PersonasTab opportunityId={opp.id} />}
         {activeTab === 'documentos' && <DocumentosTab opportunityId={opp.id} />}
-        {activeTab === 'inteligencia' && <InteligenciaTab opportunityId={opp.id} />}
+        {activeTab === 'inteligencia' && <InteligenciaHub opportunityId={opp.id} />}
       </div>
 
       {toast && (

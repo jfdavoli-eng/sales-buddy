@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
+import Link from 'next/link'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -99,7 +100,12 @@ export default function DashboardPage() {
             <li>Features de IA</li>
           </ul>
         </div>
-
+        <Link
+          href="/configuracoes"
+          className="block w-full mt-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium text-center hover:bg-gray-50 transition-colors"
+        >
+          Configurações
+        </Link>
         <button
           onClick={handleLogout}
           className="w-full mt-4 py-2.5 border border-red-200 text-red-700 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors"
