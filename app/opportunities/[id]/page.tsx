@@ -7,6 +7,7 @@ import PersonasTab from './PersonasTab'
 import DocumentosTab from './DocumentosTab'
 import InteligenciaTab from './InteligenciaTab'
 import InteligenciaHub from './InteligenciaHub'
+import ContextoTab from './ContextoTab'
 
 type Opportunity = {
   id: string
@@ -252,86 +253,11 @@ export default function OpportunityDetailPage() {
 
       <div className="max-w-2xl mx-auto px-4 py-4">
 
-        {activeTab === 'contexto' && (
-          <div className="space-y-4">
-            <div>
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                Dados do deal
-              </p>
-              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div className="flex px-3 py-2.5 border-b border-gray-100">
-                  <span className="text-xs text-gray-400 w-32 shrink-0">Empresa</span>
-                  <span className="text-[13px] font-medium text-gray-900">{opp.company_name}</span>
-                </div>
-                <div className="flex px-3 py-2.5 border-b border-gray-100">
-                  <span className="text-xs text-gray-400 w-32 shrink-0">Valor estimado</span>
-                  <span className="text-[13px] font-medium text-gray-900">{formatCurrency(opp.estimated_value)}</span>
-                </div>
-                <div className="flex px-3 py-2.5 border-b border-gray-100">
-                  <span className="text-xs text-gray-400 w-32 shrink-0">Fechamento prev.</span>
-                  <span className="text-[13px] font-medium text-gray-900">{formatDate(opp.expected_close_date)}</span>
-                </div>
-                <div className="flex px-3 py-2.5">
-                  <span className="text-xs text-gray-400 w-32 shrink-0">Contexto</span>
-                  <span className="text-[13px] text-gray-600 leading-relaxed">
-                    {opp.context || <span className="text-gray-300">Não informado</span>}
-                  </span>
-                </div>
-              </div>
-            </div>
+      {activeTab === 'contexto' && <ContextoTab opp={opp} onUpdated={setOpp} />}
 
-            <div>
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                Experiência com a empresa
-              </p>
-              <div className="bg-white border border-gray-200 rounded-xl p-3">
-                <p className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap">
-                  {opp.company_experience || <span className="text-gray-300">Nenhuma experiência registrada</span>}
-                </p>
-              </div>
-            </div>
-
-            {opp.products_services && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
-                    Produtos / Serviços
-                  </p>
-                  <span className="text-[9px] font-semibold text-[#185FA5] bg-blue-50 px-1.5 py-0.5 rounded-full">
-                    Específico desta oportunidade
-                  </span>
-                </div>
-                <div className="bg-white border border-gray-200 rounded-xl p-3">
-                  <p className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap">{opp.products_services}</p>
-                </div>
-              </div>
-            )}
-
-            <div>
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                Análise qualitativa
-              </p>
-              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div className="flex items-center justify-between px-3 py-2.5 border-b border-gray-100">
-                  <span className="text-[13px] font-semibold text-gray-900">Análise da IA</span>
-                  <button
-                    disabled
-                    className="px-3 py-1.5 bg-gray-100 text-gray-400 rounded-md text-xs font-medium cursor-not-allowed"
-                  >
-                    Em breve
-                  </button>
-                </div>
-                <p className="px-3 py-4 text-center text-xs text-gray-400 leading-relaxed">
-                  A integração com a IA será implementada na próxima etapa
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'personas' && <PersonasTab opportunityId={opp.id} />}
-        {activeTab === 'documentos' && <DocumentosTab opportunityId={opp.id} />}
-        {activeTab === 'inteligencia' && <InteligenciaHub opportunityId={opp.id} />}
+      {activeTab === 'personas' && <PersonasTab opportunityId={opp.id} />}
+      {activeTab === 'documentos' && <DocumentosTab opportunityId={opp.id} />}
+      {activeTab === 'inteligencia' && <InteligenciaHub opportunityId={opp.id} />}
       </div>
 
       {toast && (
