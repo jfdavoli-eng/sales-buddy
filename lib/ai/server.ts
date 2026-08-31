@@ -104,18 +104,79 @@ function nomeDaPersona(persona: Record<string, any>, indice: number): string {
   )
 }
 
+/* -------------------------------------------------------------------------- */
+/* 2b. Linha do tempo                                                          */
+/* -------------------------------------------------------------------------- */
+
+/** Quantos eventos entram no contexto. Ver decisão D10. */
+export const LIMITE_EVENTOS = 15
+
+const ROTULO_TIPO: Record<string, string> = {
+  reuniao: 'Reunião',
+  ligacao: 'Ligação',
+  email: 'E-mail',
+  mensagem: 'Mensagem',
+  almoco: 'Almoço / encontro',
+  noticia: 'Notícia',
+  conversa_mercado: 'Conversa de mercado',
+  outro: 'Outro',
+}
+
+function dataCurta(iso: string): string {
+  const d = new Date(iso)
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`
+}
+
+/**
+ * Formata um evento como bloco de texto.
+ *
+ * Reuniões trazem objetivo, participantes e feedback; os demais tipos trazem a
+ * descrição. Campos vazios são omitidos — linha com rótulo e nada depois só
+ * gasta contexto.
+ */
+function eventoParaTexto(
+  evento: Record<string, any>,
+  nomePorPersonaId: Map<string, string>
+): string {
+  const cabecalho = `### ${dataCurta(evento.occurred_at)} · ${ROTULO_TIPO[evento.type] ?? evento.type} — ${evento.title}`
+  const linhas: string[] = []
+
+  const participantes = (evento.event_personas ?? [])
+    .map((ep: any) => nomePorPersonaId.get(ep.persona_id))
+    .filter(Boolean)
+
+  if (participantes.length > 0) {
+    linhas.push(`- Participantes: ${participantes.join(', ')}`)
+  }
+  if (evento.objective) linhas.push(`- Objetivo: ${evento.objective}`)
+  if (evento.description) linhas.push(`- ${evento.description}`)
+  if (evento.feedback) {
+    linhas.push(`- Feedback do vendedor depois da reunião: ${evento.feedback}`)
+  }
+
+  return [cabecalho, ...linhas].join('\n')
+}
+
+/* -------------------------------------------------------------------------- */
+/* 2c. Contexto completo                                                       */
+/* -------------------------------------------------------------------------- */
+
 export type ContextoOportunidade = {
   oportunidade: Record<string, any>
   personas: Record<string, any>[]
+  eventos: Record<string, any>[]
   texto: string
 }
 
 /**
- * Carrega a oportunidade, suas personas e o contexto de produto da organização,
- * e devolve tudo já formatado como texto.
+ * Carrega a oportunidade, suas personas, a linha do tempo e o contexto de
+ * produto da organização, e devolve tudo já formatado como texto.
  *
  * @param personaIdsSelecionadas quando informado, apenas essas personas entram
- *        no contexto. Serve para o vendedor simular só quem estará na reunião.
+ *        no bloco de pessoas. Serve para o vendedor simular só quem estará na
+ *        reunião. A linha do tempo continua completa: quem não vai à reunião
+ *        ainda influencia o que aconteceu antes dela.
  */
 export async function carregarContexto(
   supabase: SupabaseClient,
@@ -144,7 +205,24 @@ export async function carregarContexto(
     .select('*')
     .eq('opportunity_id', opportunityId)
 
-  let personas = todasPersonas ?? []
+  // Os mais recentes primeiro na consulta, para o LIMIT pegar os certos.
+  const { data: eventosRecentes } = await supabase
+    .from('events')
+    .select('*, event_personas(persona_id)')
+    .eq('opportunity_id', opportunityId)
+    .order('occurred_at', { ascending: false })
+    .limit(LIMITE_EVENTOS)
+
+  const listaPersonas = todasPersonas ?? []
+  const eventos = eventosRecentes ?? []
+
+  // Mapa completo de nomes: os participantes de um evento podem incluir
+  // personas que não foram selecionadas para a reunião atual.
+  const nomePorPersonaId = new Map<string, string>(
+    listaPersonas.map((p, i) => [p.id, nomeDaPersona(p, i)])
+  )
+
+  let personas = listaPersonas
   if (personaIdsSelecionadas && personaIdsSelecionadas.length > 0) {
     personas = personas.filter((p) => personaIdsSelecionadas.includes(p.id))
   }
@@ -158,6 +236,21 @@ export async function carregarContexto(
               `### ${nomeDaPersona(p, i)}\n${linhaParaTexto(p)}`
           )
           .join('\n\n')
+
+  // Ordem cronológica na leitura: a narrativa do deal fica clara do começo para
+  // o fim, mesmo que a seleção tenha sido pelos mais recentes.
+  const blocoEventos =
+    eventos.length === 0
+      ? 'Nenhum evento registrado. Não presuma histórico de relacionamento.'
+      : [...eventos]
+          .reverse()
+          .map((e) => eventoParaTexto(e, nomePorPersonaId))
+          .join('\n\n')
+
+  const tituloEventos =
+    eventos.length >= LIMITE_EVENTOS
+      ? `## LINHA DO TEMPO (${LIMITE_EVENTOS} eventos mais recentes)`
+      : `## LINHA DO TEMPO (${eventos.length})`
 
   // O portfólio vem primeiro: ele enquadra tudo o que vem depois. Sem saber o
   // que o vendedor vende, a IA infere a partir do material anexado — o que
@@ -175,9 +268,12 @@ export async function carregarContexto(
     '',
     `## PESSOAS ENVOLVIDAS (${personas.length})`,
     blocoPersonas,
+    '',
+    tituloEventos,
+    blocoEventos,
   ].join('\n')
 
-  return { oportunidade, personas, texto }
+  return { oportunidade, personas, eventos, texto }
 }
 
 /* -------------------------------------------------------------------------- */

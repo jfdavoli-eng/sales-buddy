@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
-import PersonasTab from './PersonasTab'
-import DocumentosTab from './DocumentosTab'
+import CadastrosTab from './CadastrosTab'
+import EventosTab from './EventosTab'
 import InteligenciaTab from './InteligenciaTab'
 import InteligenciaHub from './InteligenciaHub'
 import ContextoTab from './ContextoTab'
@@ -41,8 +41,8 @@ const STAGE_BADGE: Record<string, string> = {
 
 const TABS = [
   { key: 'contexto', label: 'Contexto' },
-  { key: 'personas', label: 'Personas' },
-  { key: 'documentos', label: 'Documentos' },
+  { key: 'cadastros', label: 'Cadastros' },
+  { key: 'eventos', label: 'Eventos' },
   { key: 'inteligencia', label: 'Inteligência' },
 ]
 
@@ -254,10 +254,9 @@ export default function OpportunityDetailPage() {
       <div className="max-w-2xl mx-auto px-4 py-4">
 
       {activeTab === 'contexto' && <ContextoTab opp={opp} onUpdated={setOpp} />}
-
-      {activeTab === 'personas' && <PersonasTab opportunityId={opp.id} />}
-      {activeTab === 'documentos' && <DocumentosTab opportunityId={opp.id} />}
-      {activeTab === 'inteligencia' && <InteligenciaHub opportunityId={opp.id} />}
+        {activeTab === 'cadastros' && <CadastrosTab opportunityId={opp.id} />}
+        {activeTab === 'eventos' && <EventosTab opportunityId={opp.id} />}
+        {activeTab === 'inteligencia' && <InteligenciaHub opportunityId={opp.id} />}
       </div>
 
       {toast && (

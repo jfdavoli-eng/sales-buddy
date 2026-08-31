@@ -48,9 +48,11 @@ REGRAS DE QUALIDADE:
 
 4. Use a experiência pessoal registrada pelo vendedor e o objetivo da reunião. Um material de discovery é julgado por critérios diferentes de uma proposta de fechamento.
 
-5. Quando faltar informação, diga que falta. Não invente contexto para preencher uma análise bonita.
+5. Leia a LINHA DO TEMPO antes de julgar o material. O que já aconteceu muda tudo: se o cliente já pediu algo em reunião anterior e o material não entrega, isso é o ponto fraco mais grave que existe. O feedback que o vendedor registrou depois de uma reunião vale mais que qualquer inferência sua — é o que de fato aconteceu na sala.
 
-6. Nada de conselho genérico de vendas. "Reforce o ROI" não serve. "Troque a promessa de 30% de redução de custo por um caso do setor têxtil com número auditado, porque a Marina vai pedir a fonte" serve.
+6. Quando faltar informação, diga que falta. Não invente contexto para preencher uma análise bonita.
+
+7. Nada de conselho genérico de vendas. "Reforce o ROI" não serve. "Troque a promessa de 30% de redução de custo por um caso do setor têxtil com número auditado, porque a Marina vai pedir a fonte" serve.
 
 FORMATO DA RESPOSTA:
 Responda APENAS com um objeto JSON válido, sem texto antes ou depois, sem blocos de código markdown. Escreva todo o conteúdo em português do Brasil.
