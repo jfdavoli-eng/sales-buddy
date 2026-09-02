@@ -2,7 +2,7 @@
  * app/api/dry-run/route.ts
  *
  * Dry Run (requisito C2): o vendedor escolhe um material já enviado na aba
- * Documentos e a IA antecipa questionamentos, críticas, pedidos de desconto e
+ * Cadastros e a IA antecipa questionamentos, críticas, pedidos de desconto e
  * pontos fracos — com sugestões de como reforçá-los.
  */
 
@@ -50,9 +50,11 @@ REGRAS DE QUALIDADE:
 
 5. Leia a LINHA DO TEMPO antes de julgar o material. O que já aconteceu muda tudo: se o cliente já pediu algo em reunião anterior e o material não entrega, isso é o ponto fraco mais grave que existe. O feedback que o vendedor registrou depois de uma reunião vale mais que qualquer inferência sua — é o que de fato aconteceu na sala.
 
-6. Quando faltar informação, diga que falta. Não invente contexto para preencher uma análise bonita.
+6. Use o contexto econômico quando existir: orçamento do cliente, alçadas de aprovação, restrições comerciais do vendedor e premissas de pagamento. Eles mudam a leitura da pressão por desconto e do ritmo do deal. Nunca sugira uma concessão que as restrições comerciais do vendedor não permitem.
 
-7. Nada de conselho genérico de vendas. "Reforce o ROI" não serve. "Troque a promessa de 30% de redução de custo por um caso do setor têxtil com número auditado, porque a Marina vai pedir a fonte" serve.
+7. Quando faltar informação, diga que falta. Não invente contexto para preencher uma análise bonita.
+
+8. Nada de conselho genérico de vendas. "Reforce o ROI" não serve. "Troque a promessa de 30% de redução de custo por um caso do setor têxtil com número auditado, porque a Marina vai pedir a fonte" serve.
 
 FORMATO DA RESPOSTA:
 Responda APENAS com um objeto JSON válido, sem texto antes ou depois, sem blocos de código markdown. Escreva todo o conteúdo em português do Brasil.
@@ -106,6 +108,7 @@ export async function POST(req: NextRequest) {
     const documentId: string = body.documentId
     const personaIds: string[] = body.personaIds ?? []
     const objetivo: string = (body.objetivo ?? '').trim()
+    const eventId: string | null = body.eventId ?? null
 
     if (!opportunityId || !documentId) {
       return NextResponse.json(
@@ -114,7 +117,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 1. Contexto da oportunidade e das personas selecionadas
+    // 1. Contexto da oportunidade, personas selecionadas e linha do tempo
     const contexto = await carregarContexto(supabase, opportunityId, personaIds)
 
     // 2. O PDF
@@ -150,7 +153,7 @@ export async function POST(req: NextRequest) {
 
     // 4. Geração
     //    8000 tokens: a análise da Intelbras estourou 4000. Uma proposta densa
-    //    gera 5 pontos fracos + 5 perguntas com resposta, e cada item é um
+    //    gera pontos fracos e perguntas com resposta, e cada item é um
     //    parágrafo. Cortar pela metade destrói o valor da feature.
     const content = await gerarJson(SYSTEM, blocos, 8000)
 
@@ -163,6 +166,7 @@ export async function POST(req: NextRequest) {
         documento_nome: documento.registro.file_name,
         personas: contexto.personas.map((p: any) => p.name ?? p.nome ?? null),
         objetivo: objetivo || null,
+        event_id: eventId,
       },
     }
 
@@ -170,7 +174,8 @@ export async function POST(req: NextRequest) {
       supabase,
       opportunityId,
       OUTPUT_TYPE,
-      registro
+      registro,
+      eventId
     )
 
     return NextResponse.json({ content: registro, persisted: persistido })

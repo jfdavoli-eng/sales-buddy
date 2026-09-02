@@ -421,11 +421,17 @@ export async function salvarOutput(
   supabase: SupabaseClient,
   opportunityId: string,
   outputType: string,
-  content: any
+  content: any,
+  eventId: string | null = null
 ): Promise<boolean> {
   const { error } = await supabase
     .from('ai_outputs')
-    .insert({ opportunity_id: opportunityId, output_type: outputType, content })
+    .insert({
+      opportunity_id: opportunityId,
+      output_type: outputType,
+      content,
+      event_id: eventId,
+    })
 
   return !error
 }

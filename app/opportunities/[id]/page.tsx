@@ -70,7 +70,7 @@ export default function OpportunityDetailPage() {
   const [activeTab, setActiveTab] = useState('contexto')
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
-
+  const [dryRunEventoId, setDryRunEventoId] = useState<string | null>(null)
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -255,8 +255,15 @@ export default function OpportunityDetailPage() {
 
       {activeTab === 'contexto' && <ContextoTab opp={opp} onUpdated={setOpp} />}
         {activeTab === 'cadastros' && <CadastrosTab opportunityId={opp.id} />}
-        {activeTab === 'eventos' && <EventosTab opportunityId={opp.id} />}
-        {activeTab === 'inteligencia' && <InteligenciaHub opportunityId={opp.id} />}
+        {activeTab === 'eventos' && (
+  <EventosTab
+    opportunityId={opp.id}
+    onGerarDryRun={(id) => { setDryRunEventoId(id); setActiveTab('inteligencia') }}
+  />
+)}
+        {activeTab === 'inteligencia' && (
+  <InteligenciaHub opportunityId={opp.id} eventoInicialId={dryRunEventoId} />
+)}
       </div>
 
       {toast && (

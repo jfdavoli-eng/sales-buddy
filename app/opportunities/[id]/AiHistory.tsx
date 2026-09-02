@@ -5,12 +5,14 @@
  *
  * Histórico de versões para qualquer gerador de IA.
  *
- * Este é o componente que resolve, de uma vez, o problema de a versão anterior
- * sumir da tela quando uma nova é gerada. A regra é simples: a lista de versões
- * nunca é limpa. Enquanto uma geração roda, o vendedor continua vendo o que já
- * tinha — e quando a nova chega, ela entra no topo da lista sem apagar nada.
+ * A regra central: a lista de versões nunca é limpa. Enquanto uma geração roda,
+ * o vendedor continua vendo o que já tinha — e quando a nova chega, ela entra no
+ * topo sem apagar nada.
  *
- * Serve o Dry Run e o Mocking Meeting hoje; a Análise e o Roteiro depois.
+ * O histórico é escopado por evento. Regerar a análise da reunião de setembro
+ * não tem nada a ver com a de outubro, então cada reunião tem sua própria
+ * sequência de versões. Análises rodadas sem reunião — para avaliar um material
+ * antes de decidir se vale marcar conversa — formam uma sequência separada.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -20,6 +22,7 @@ export type VersaoIA = {
   id: string
   content: any
   created_at: string
+  event_id: string | null
 }
 
 export function formatarData(iso: string): string {
@@ -36,7 +39,11 @@ export function formatarData(iso: string): string {
 /* O hook                                                                      */
 /* -------------------------------------------------------------------------- */
 
-export function useHistoricoIA(opportunityId: string, outputType: string) {
+export function useHistoricoIA(
+  opportunityId: string,
+  outputType: string,
+  eventId: string | null = null
+) {
   // useMemo garante um único cliente por montagem do componente. Sem ele, cada
   // render criaria uma conexão nova e o useCallback abaixo nunca estabilizaria.
   const supabase = useMemo(() => createClient(), [])
@@ -47,30 +54,46 @@ export function useHistoricoIA(opportunityId: string, outputType: string) {
 
   const carregar = useCallback(async () => {
     setCarregando(true)
-    const { data } = await supabase
+
+    let consulta = supabase
       .from('ai_outputs')
-      .select('id, content, created_at')
+      .select('id, content, created_at, event_id')
       .eq('opportunity_id', opportunityId)
       .eq('output_type', outputType)
-      .order('created_at', { ascending: false })
+
+    // `.is(null)` e `.eq(id)` são coisas diferentes no Postgres: sem o ramo do
+    // nulo, as análises soltas nunca apareceriam.
+    consulta = eventId
+      ? consulta.eq('event_id', eventId)
+      : consulta.is('event_id', null)
+
+    const { data } = await consulta.order('created_at', { ascending: false })
 
     setVersoes(data ?? [])
     setIndice(0)
     setCarregando(false)
-  }, [supabase, opportunityId, outputType])
+  }, [supabase, opportunityId, outputType, eventId])
 
   useEffect(() => {
     carregar()
   }, [carregar])
 
   /** Chamado quando uma geração termina: a nova versão entra no topo. */
-  const adicionarVersao = useCallback((content: any) => {
-    setVersoes((anteriores) => [
-      { id: `local-${Date.now()}`, content, created_at: new Date().toISOString() },
-      ...anteriores,
-    ])
-    setIndice(0)
-  }, [])
+  const adicionarVersao = useCallback(
+    (content: any, event_id: string | null = null) => {
+      setVersoes((anteriores) => [
+        {
+          id: `local-${Date.now()}`,
+          content,
+          created_at: new Date().toISOString(),
+          event_id,
+        },
+        ...anteriores,
+      ])
+      setIndice(0)
+    },
+    []
+  )
 
   return {
     versoes,
@@ -91,55 +114,66 @@ type NavProps = {
   versoes: VersaoIA[]
   indice: number
   onMudar: (indice: number) => void
+  /** Texto opcional dizendo a que reunião estas versões pertencem. */
+  escopo?: string
 }
 
-export function NavegacaoVersoes({ versoes, indice, onMudar }: NavProps) {
+export function NavegacaoVersoes({
+  versoes,
+  indice,
+  onMudar,
+  escopo,
+}: NavProps) {
   if (versoes.length === 0) return null
 
   const atual = versoes[indice]
   const ehMaisRecente = indice === 0
 
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-gray-100 pb-3">
-      <div className="flex items-center gap-1">
-        <button
-          type="button"
-          onClick={() => onMudar(indice + 1)}
-          disabled={indice >= versoes.length - 1}
-          className="rounded border border-gray-200 px-2 py-1 text-sm text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
-          aria-label="Versão anterior"
-        >
-          ‹
-        </button>
-        <button
-          type="button"
-          onClick={() => onMudar(indice - 1)}
-          disabled={indice <= 0}
-          className="rounded border border-gray-200 px-2 py-1 text-sm text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
-          aria-label="Versão seguinte"
-        >
-          ›
-        </button>
+    <div className="space-y-1 border-b border-gray-100 pb-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onMudar(indice + 1)}
+            disabled={indice >= versoes.length - 1}
+            className="rounded border border-gray-200 px-2 py-1 text-sm text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Versão anterior"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            onClick={() => onMudar(indice - 1)}
+            disabled={indice <= 0}
+            className="rounded border border-gray-200 px-2 py-1 text-sm text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Versão seguinte"
+          >
+            ›
+          </button>
+        </div>
+
+        <span className="text-sm text-gray-600">
+          Versão {versoes.length - indice} de {versoes.length}
+          <span className="text-gray-400"> · {formatarData(atual.created_at)}</span>
+        </span>
+
+        {ehMaisRecente ? (
+          <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+            mais recente
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onMudar(0)}
+            className="text-xs font-medium text-[#185FA5] hover:underline"
+          >
+            ir para a mais recente
+          </button>
+        )}
       </div>
 
-      <span className="text-sm text-gray-600">
-        Versão {versoes.length - indice} de {versoes.length}
-        <span className="text-gray-400"> · {formatarData(atual.created_at)}</span>
-      </span>
-
-      {ehMaisRecente ? (
-        <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-          mais recente
-        </span>
-      ) : (
-        <button
-          type="button"
-          onClick={() => onMudar(0)}
-          className="text-xs font-medium text-blue-600 hover:underline"
-        >
-          ir para a mais recente
-        </button>
-      )}
+      {escopo && <p className="text-xs text-gray-400">{escopo}</p>}
     </div>
   )
 }

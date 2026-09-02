@@ -12,6 +12,11 @@
  * O que NÃO se edita aqui: estágio e resultado (WON/LOST). Os dois já têm
  * controle próprio no cabeçalho da página. Editar a mesma informação em dois
  * lugares é como as telas divergem com o tempo.
+ *
+ * O bloco de contexto econômico é informação, não calculadora. A modelagem de
+ * cenários ficou para a V2. Como lib/ai/server.ts monta o contexto lendo todas
+ * as colunas de `opportunities`, estes campos alimentam os prompts assim que
+ * são preenchidos — sem tocar em nenhuma rota de IA.
  */
 
 import { useMemo, useState } from 'react'
@@ -22,7 +27,7 @@ import { createClient } from '@/lib/supabase-client'
 /* -------------------------------------------------------------------------- */
 
 function formatarMoeda(valor: number | null | undefined): string {
-  if (valor === null || valor === undefined || valor === '') return '—'
+  if (valor === null || valor === undefined || (valor as any) === '') return '—'
   return Number(valor).toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
@@ -70,10 +75,40 @@ function Linha({
   )
 }
 
-function TextoLongo({ valor, vazio }: { valor: string | null; vazio: string }) {
+function TextoLongo({
+  valor,
+  vazio,
+}: {
+  valor: string | null
+  vazio: string
+}) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-3">
       <p className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap">
+        {valor || <span className="text-gray-300">{vazio}</span>}
+      </p>
+    </div>
+  )
+}
+
+/** Sub-bloco dentro de um card, usado no contexto econômico. */
+function SubBloco({
+  titulo,
+  valor,
+  vazio,
+  ultimo,
+}: {
+  titulo: string
+  valor: string | null
+  vazio: string
+  ultimo?: boolean
+}) {
+  return (
+    <div className={`px-3 py-2.5 ${ultimo ? '' : 'border-b border-gray-100'}`}>
+      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
+        {titulo}
+      </p>
+      <p className="mt-1 text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap">
         {valor || <span className="text-gray-300">{vazio}</span>}
       </p>
     </div>
@@ -105,6 +140,8 @@ function Campo({
 const inputClasse =
   'w-full rounded-lg border border-gray-300 px-3 py-2 text-[13px] focus:border-[#185FA5] focus:outline-none'
 
+const textareaClasse = `${inputClasse} resize-y leading-relaxed`
+
 /* -------------------------------------------------------------------------- */
 /* O componente                                                                */
 /* -------------------------------------------------------------------------- */
@@ -115,6 +152,21 @@ type Props = {
   onUpdated?: (opp: any) => void
 }
 
+function formDe(o: any) {
+  return {
+    company_name: o.company_name ?? '',
+    estimated_value: o.estimated_value ?? '',
+    expected_close_date: o.expected_close_date ?? '',
+    context: o.context ?? '',
+    company_experience: o.company_experience ?? '',
+    products_services: o.products_services ?? '',
+    industry_strategy: o.industry_strategy ?? '',
+    budget_context: o.budget_context ?? '',
+    commercial_constraints: o.commercial_constraints ?? '',
+    payment_assumptions: o.payment_assumptions ?? '',
+  }
+}
+
 export default function ContextoTab({ opp, onUpdated }: Props) {
   const supabase = useMemo(() => createClient(), [])
 
@@ -122,29 +174,19 @@ export default function ContextoTab({ opp, onUpdated }: Props) {
   const [editando, setEditando] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
-
-  const [form, setForm] = useState({
-    company_name: opp.company_name ?? '',
-    estimated_value: opp.estimated_value ?? '',
-    expected_close_date: opp.expected_close_date ?? '',
-    context: opp.context ?? '',
-    company_experience: opp.company_experience ?? '',
-    products_services: opp.products_services ?? '',
-    industry_strategy: opp.industry_strategy ?? '',
-  })
+  const [form, setForm] = useState(formDe(opp))
 
   function abrirEdicao() {
-    setForm({
-      company_name: dados.company_name ?? '',
-      estimated_value: dados.estimated_value ?? '',
-      expected_close_date: dados.expected_close_date ?? '',
-      context: dados.context ?? '',
-      company_experience: dados.company_experience ?? '',
-      products_services: dados.products_services ?? '',
-      industry_strategy: dados.industry_strategy ?? '',
-    })
+    setForm(formDe(dados))
     setErro('')
     setEditando(true)
+  }
+
+  function campo(nome: keyof ReturnType<typeof formDe>) {
+    return {
+      value: (form as any)[nome],
+      onChange: (e: any) => setForm({ ...form, [nome]: e.target.value }),
+    }
   }
 
   async function salvar() {
@@ -158,15 +200,20 @@ export default function ContextoTab({ opp, onUpdated }: Props) {
 
     // Campos opcionais vazios vão como null, não como string vazia: no banco,
     // '' e NULL são coisas diferentes, e o gerador de contexto da IA pula nulos.
+    const texto = (v: string) => v.trim() || null
+
     const paraGravar = {
       company_name: form.company_name.trim(),
       estimated_value:
         form.estimated_value === '' ? null : Number(form.estimated_value),
       expected_close_date: form.expected_close_date || null,
-      context: form.context.trim() || null,
-      company_experience: form.company_experience.trim() || null,
-      products_services: form.products_services.trim() || null,
-      industry_strategy: form.industry_strategy.trim() || null,
+      context: texto(form.context),
+      company_experience: texto(form.company_experience),
+      products_services: texto(form.products_services),
+      industry_strategy: texto(form.industry_strategy),
+      budget_context: texto(form.budget_context),
+      commercial_constraints: texto(form.commercial_constraints),
+      payment_assumptions: texto(form.payment_assumptions),
       updated_at: new Date().toISOString(),
     }
 
@@ -235,24 +282,14 @@ export default function ContextoTab({ opp, onUpdated }: Props) {
 
         <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-3">
           <Campo rotulo="Empresa">
-            <input
-              type="text"
-              value={form.company_name}
-              onChange={(e) =>
-                setForm({ ...form, company_name: e.target.value })
-              }
-              className={inputClasse}
-            />
+            <input type="text" {...campo('company_name')} className={inputClasse} />
           </Campo>
 
           <Campo rotulo="Valor estimado (R$)">
             <input
               type="number"
               inputMode="numeric"
-              value={form.estimated_value}
-              onChange={(e) =>
-                setForm({ ...form, estimated_value: e.target.value })
-              }
+              {...campo('estimated_value')}
               placeholder="250000"
               className={inputClasse}
             />
@@ -261,10 +298,7 @@ export default function ContextoTab({ opp, onUpdated }: Props) {
           <Campo rotulo="Fechamento previsto">
             <input
               type="date"
-              value={form.expected_close_date}
-              onChange={(e) =>
-                setForm({ ...form, expected_close_date: e.target.value })
-              }
+              {...campo('expected_close_date')}
               className={inputClasse}
             />
           </Campo>
@@ -273,12 +307,7 @@ export default function ContextoTab({ opp, onUpdated }: Props) {
             rotulo="Contexto"
             dica="O que está em jogo, como o deal chegou até você, o que já foi conversado."
           >
-            <textarea
-              value={form.context}
-              onChange={(e) => setForm({ ...form, context: e.target.value })}
-              rows={4}
-              className={`${inputClasse} resize-y leading-relaxed`}
-            />
+            <textarea rows={4} {...campo('context')} className={textareaClasse} />
           </Campo>
         </div>
 
@@ -288,12 +317,9 @@ export default function ContextoTab({ opp, onUpdated }: Props) {
             dica="Seu histórico pessoal com esta empresa ou com estas pessoas. É o dado que nenhum concorrente tem."
           >
             <textarea
-              value={form.company_experience}
-              onChange={(e) =>
-                setForm({ ...form, company_experience: e.target.value })
-              }
               rows={4}
-              className={`${inputClasse} resize-y leading-relaxed`}
+              {...campo('company_experience')}
+              className={textareaClasse}
             />
           </Campo>
 
@@ -302,12 +328,9 @@ export default function ContextoTab({ opp, onUpdated }: Props) {
             dica="Só o que é específico deste deal. O portfólio geral fica em Configurações."
           >
             <textarea
-              value={form.products_services}
-              onChange={(e) =>
-                setForm({ ...form, products_services: e.target.value })
-              }
               rows={3}
-              className={`${inputClasse} resize-y leading-relaxed`}
+              {...campo('products_services')}
+              className={textareaClasse}
             />
           </Campo>
 
@@ -316,14 +339,52 @@ export default function ContextoTab({ opp, onUpdated }: Props) {
             dica="Setor do cliente, vocabulário do meio, dores típicas dos executivos dessa indústria."
           >
             <textarea
-              value={form.industry_strategy}
-              onChange={(e) =>
-                setForm({ ...form, industry_strategy: e.target.value })
-              }
               rows={3}
-              className={`${inputClasse} resize-y leading-relaxed`}
+              {...campo('industry_strategy')}
+              className={textareaClasse}
             />
           </Campo>
+        </div>
+
+        <div>
+          <Rotulo>Contexto econômico</Rotulo>
+          <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-3">
+            <Campo
+              rotulo="Orçamento e aprovações do cliente"
+              dica="Quanto ele tem, quando o orçamento vira, quem aprova acima de qual valor."
+            >
+              <textarea
+                rows={3}
+                {...campo('budget_context')}
+                placeholder="Ex.: verba de capex fecha em outubro; acima de R$ 300 mil precisa passar pelo conselho."
+                className={textareaClasse}
+              />
+            </Campo>
+
+            <Campo
+              rotulo="Suas restrições comerciais"
+              dica="Margem mínima, alçada de desconto, o que você pode e o que não pode oferecer."
+            >
+              <textarea
+                rows={3}
+                {...campo('commercial_constraints')}
+                placeholder="Ex.: desconto até 8% sem aprovação; abaixo de 22% de margem não passa."
+                className={textareaClasse}
+              />
+            </Campo>
+
+            <Campo
+              rotulo="Premissas de pagamento"
+              dica="Prazo, parcelamento, moeda, condições já discutidas ou pretendidas."
+              >
+              <textarea
+                rows={3}
+                {...campo('payment_assumptions')}
+                placeholder="Ex.: 30/60/90 na proposta; cliente pediu 120 dias na conversa anterior."
+                className={textareaClasse}
+              />
+            </Campo>
+          </div>
         </div>
       </div>
     )
@@ -332,6 +393,11 @@ export default function ContextoTab({ opp, onUpdated }: Props) {
   /* ---------------------------------------------------------------------- */
   /* Modo leitura                                                           */
   /* ---------------------------------------------------------------------- */
+
+  const semEconomico =
+    !dados.budget_context &&
+    !dados.commercial_constraints &&
+    !dados.payment_assumptions
 
   return (
     <div className="space-y-4">
@@ -391,10 +457,41 @@ export default function ContextoTab({ opp, onUpdated }: Props) {
 
       <div>
         <Rotulo>Estratégia por indústria</Rotulo>
-        <TextoLongo
-          valor={dados.industry_strategy}
-          vazio="Não informada"
-        />
+        <TextoLongo valor={dados.industry_strategy} vazio="Não informada" />
+      </div>
+
+      <div>
+        <Rotulo>Contexto econômico</Rotulo>
+        {semEconomico ? (
+          <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-5 text-center">
+            <p className="text-[13px] text-gray-600">
+              Nenhuma informação econômica registrada.
+            </p>
+            <p className="mx-auto mt-1 max-w-sm text-[11px] text-gray-500">
+              Orçamento, alçadas e condições de pagamento mudam como a IA lê a
+              pressão por desconto e o ritmo do deal.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <SubBloco
+              titulo="Orçamento e aprovações do cliente"
+              valor={dados.budget_context}
+              vazio="Não informado"
+            />
+            <SubBloco
+              titulo="Suas restrições comerciais"
+              valor={dados.commercial_constraints}
+              vazio="Não informadas"
+            />
+            <SubBloco
+              titulo="Premissas de pagamento"
+              valor={dados.payment_assumptions}
+              vazio="Não informadas"
+              ultimo
+            />
+          </div>
+        )}
       </div>
     </div>
   )

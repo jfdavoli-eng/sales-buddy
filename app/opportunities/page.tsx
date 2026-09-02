@@ -56,6 +56,7 @@ export default function OpportunitiesPage() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([])
   const [activeStage, setActiveStage] = useState('todas')
   const [search, setSearch] = useState('')
+  
 
   useEffect(() => {
     async function load() {

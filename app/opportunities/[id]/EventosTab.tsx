@@ -8,12 +8,11 @@
  *
  * O princípio de desenho é o do estacionamento: o vendedor registra no celular,
  * logo depois do que aconteceu, com pressa. Por isso o formulário exige apenas
- * tipo, título e data — todo o resto é opcional. A qualidade vem do texto livre,
- * não da estrutura.
+ * tipo, título e data — todo o resto é opcional.
  *
- * Reuniões ganham três campos extras: objetivo, participantes e feedback. O
- * feedback é o olhar do vendedor depois; desdobramentos posteriores viram
- * eventos novos.
+ * Reunião tem antes (objetivo) e depois (feedback); os demais tipos têm uma
+ * descrição livre. E ao salvar uma reunião, o app oferece rodar o Dry Run na
+ * hora, levando o objetivo e os participantes já preenchidos.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -64,7 +63,7 @@ function ehPassado(iso: string): boolean {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Estilos compartilhados                                                      */
+/* Estilos e estado inicial                                                    */
 /* -------------------------------------------------------------------------- */
 
 const inputClasse =
@@ -91,8 +90,11 @@ function rotularPersona(p: any, i: number): string {
 
 export default function EventosTab({
   opportunityId,
+  onGerarDryRun,
 }: {
   opportunityId: string
+  /** Leva o vendedor para Inteligência › Dry Run com esta reunião escolhida. */
+  onGerarDryRun?: (eventoId: string) => void
 }) {
   const supabase = useMemo(() => createClient(), [])
 
@@ -106,6 +108,12 @@ export default function EventosTab({
   const [salvando, setSalvando] = useState(false)
   const [form, setForm] = useState<any>(FORM_VAZIO)
   const [participantes, setParticipantes] = useState<string[]>([])
+
+  /** Reunião recém-salva, aguardando a resposta sobre rodar o Dry Run. */
+  const [ofertaDryRun, setOfertaDryRun] = useState<{
+    id: string
+    title: string
+  } | null>(null)
 
   /* ---------------------------------------------------------------------- */
   /* Carregamento                                                           */
@@ -148,6 +156,7 @@ export default function EventosTab({
     setParticipantes([])
     setEditandoId(null)
     setCriando(true)
+    setOfertaDryRun(null)
     setErro('')
   }
 
@@ -165,6 +174,7 @@ export default function EventosTab({
     )
     setCriando(false)
     setEditandoId(evento.id)
+    setOfertaDryRun(null)
     setErro('')
   }
 
@@ -191,7 +201,7 @@ export default function EventosTab({
     setSalvando(true)
     setErro('')
 
-    const ehReuniao = form.type === 'reuniao'
+    const ehReuniaoSalvando = form.type === 'reuniao'
 
     const registro: any = {
       opportunity_id: opportunityId,
@@ -200,9 +210,9 @@ export default function EventosTab({
       occurred_at: new Date(form.occurred_at).toISOString(),
       // Cada tipo grava só os campos que exibe. Trocar o tipo depois de
       // preencher não deve deixar dado órfão num evento que não o mostra.
-      description: ehReuniao ? null : form.description.trim() || null,
-      objective: ehReuniao ? form.objective.trim() || null : null,
-      feedback: ehReuniao ? form.feedback.trim() || null : null,
+      description: ehReuniaoSalvando ? null : form.description.trim() || null,
+      objective: ehReuniaoSalvando ? form.objective.trim() || null : null,
+      feedback: ehReuniaoSalvando ? form.feedback.trim() || null : null,
       updated_at: new Date().toISOString(),
     }
 
@@ -222,7 +232,9 @@ export default function EventosTab({
       }
       if (!data || data.length === 0) {
         setSalvando(false)
-        setErro('A gravação não afetou nenhuma linha. Verifique a política de UPDATE em events.')
+        setErro(
+          'A gravação não afetou nenhuma linha. Verifique a política de UPDATE em events.'
+        )
         return
       }
     } else {
@@ -244,7 +256,7 @@ export default function EventosTab({
     if (eventoId) {
       await supabase.from('event_personas').delete().eq('event_id', eventoId)
 
-      if (ehReuniao && participantes.length > 0) {
+      if (ehReuniaoSalvando && participantes.length > 0) {
         const { error: erroPers } = await supabase
           .from('event_personas')
           .insert(
@@ -263,12 +275,25 @@ export default function EventosTab({
     }
 
     setSalvando(false)
+
+    // A oferta do Dry Run só faz sentido para reunião: é o único tipo com
+    // material a analisar e objetivo definido.
+       // Só oferece o Dry Run para reunião que ainda vai acontecer. Preparar uma
+    // conversa que já passou não faz sentido — ali o que interessa é o feedback.
+    const aindaVaiAcontecer = !ehPassado(new Date(form.occurred_at).toISOString())
+
+    if (ehReuniaoSalvando && aindaVaiAcontecer && eventoId && onGerarDryRun) {
+      setOfertaDryRun({ id: eventoId, title: form.title.trim() })
+    }
+
     fechar()
     await carregar()
   }
 
   async function apagar(id: string) {
-    if (!confirm('Apagar este evento? As análises vinculadas a ele são mantidas.')) {
+    if (
+      !confirm('Apagar este evento? As análises vinculadas a ele são mantidas.')
+    ) {
       return
     }
     const { error } = await supabase.from('events').delete().eq('id', id)
@@ -276,6 +301,7 @@ export default function EventosTab({
       setErro(error.message)
       return
     }
+    setOfertaDryRun(null)
     await carregar()
   }
 
@@ -292,11 +318,10 @@ export default function EventosTab({
   const ehReuniao = form.type === 'reuniao'
 
   /**
-   * Repare que isto é chamado como função — `{formulario()}` — e não renderizado
-   * como `<Formulario />`. A diferença é decisiva: declarado dentro do
-   * componente, `<Formulario />` seria um tipo novo a cada render, e o React
-   * desmontaria e remontaria o formulário a cada tecla, fazendo o campo perder
-   * o foco depois da primeira letra.
+   * Chamado como função — `{formulario()}` — e não renderizado como
+   * `<Formulario />`. Declarado dentro do componente, seria um tipo novo a cada
+   * render, e o React desmontaria o formulário a cada tecla, fazendo o campo
+   * perder o foco depois da primeira letra.
    */
   function formulario() {
     return (
@@ -355,6 +380,9 @@ export default function EventosTab({
                 placeholder="O que você quer sair desta reunião."
                 className={`${inputClasse} resize-y leading-relaxed`}
               />
+              <p className="mt-1 text-[11px] text-gray-400">
+                Este texto é reaproveitado pelo Dry Run.
+              </p>
             </div>
 
             {personas.length > 0 && (
@@ -488,6 +516,37 @@ export default function EventosTab({
         )}
       </div>
 
+      {ofertaDryRun && (
+        <div className="rounded-xl border border-[#185FA5] bg-blue-50 p-3">
+          <p className="text-[13px] font-medium text-gray-900">
+            Reunião salva: {ofertaDryRun.title}
+          </p>
+          <p className="mt-1 text-[11px] text-gray-600">
+            Quer rodar o Dry Run agora? O objetivo e os participantes já vão
+            preenchidos — falta só escolher o material.
+          </p>
+          <div className="mt-2 flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                onGerarDryRun?.(ofertaDryRun.id)
+                setOfertaDryRun(null)
+              }}
+              className="px-3 py-1.5 bg-[#185FA5] text-white rounded-md text-xs font-medium hover:opacity-90"
+            >
+              Rodar Dry Run
+            </button>
+            <button
+              type="button"
+              onClick={() => setOfertaDryRun(null)}
+              className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-md text-xs font-medium hover:bg-white"
+            >
+              Agora não
+            </button>
+          </div>
+        </div>
+      )}
+
       {criando && formulario()}
 
       {eventos.length === 0 && !criando && (
@@ -511,8 +570,7 @@ export default function EventosTab({
             reuniao && !evento.feedback && ehPassado(evento.occurred_at)
           const nomes = (evento.event_personas ?? [])
             .map(
-              (ep: any) =>
-                personas.find((p) => p.id === ep.persona_id)?.rotulo
+              (ep: any) => personas.find((p) => p.id === ep.persona_id)?.rotulo
             )
             .filter(Boolean)
 
@@ -541,18 +599,35 @@ export default function EventosTab({
                     {evento.title}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => abrirEdicao(evento)}
-                  className="shrink-0 px-2.5 py-1 border border-gray-300 text-gray-600 rounded-md text-[11px] font-medium hover:bg-gray-50"
-                >
-                  Editar
-                </button>
+                <div className="flex shrink-0 gap-1.5">
+                  {reuniao && onGerarDryRun && (
+                    <button
+                      type="button"
+                      onClick={() => onGerarDryRun(evento.id)}
+                      className="px-2.5 py-1 border border-[#185FA5] text-[#185FA5] rounded-md text-[11px] font-medium hover:bg-blue-50"
+                    >
+                      Dry Run
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => abrirEdicao(evento)}
+                    className="px-2.5 py-1 border border-gray-300 text-gray-600 rounded-md text-[11px] font-medium hover:bg-gray-50"
+                  >
+                    Editar
+                  </button>
+                </div>
               </div>
 
               {nomes.length > 0 && (
                 <p className="mt-2 text-[11px] text-gray-500">
                   Participantes: {nomes.join(', ')}
+                </p>
+              )}
+
+              {evento.objective && (
+                <p className="mt-2 text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap">
+                  {evento.objective}
                 </p>
               )}
 

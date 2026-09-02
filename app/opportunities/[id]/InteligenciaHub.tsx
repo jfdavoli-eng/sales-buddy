@@ -3,15 +3,15 @@
 /**
  * app/opportunities/[id]/InteligenciaHub.tsx
  *
- * A aba Inteligência vira um hub com três geradores em vez de virar três abas
- * novas. Com quatro abas no topo (Contexto, Personas, Documentos, Inteligência)
- * o app continua utilizável no celular — que é onde o vendedor abre isto, entre
- * uma reunião e outra.
+ * A aba Inteligência é um hub com três geradores em vez de três abas novas.
+ * Com quatro abas no topo, o app continua utilizável no celular — que é onde o
+ * vendedor abre isto, entre uma reunião e outra.
  *
- * O InteligenciaTab que já funciona não foi tocado: ele entra aqui inteiro.
+ * Quando o vendedor chega aqui pelo botão da aba Eventos, `eventoInicialId` vem
+ * preenchido: o hub abre direto no Dry Run com a reunião escolhida.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import InteligenciaTab from './InteligenciaTab'
 import DryRunPanel from './DryRunPanel'
 
@@ -25,10 +25,20 @@ type Chave = (typeof SECOES)[number]['chave']
 
 export default function InteligenciaHub({
   opportunityId,
+  eventoInicialId = null,
 }: {
   opportunityId: string
+  eventoInicialId?: string | null
 }) {
-  const [secao, setSecao] = useState<Chave>('analise')
+  const [secao, setSecao] = useState<Chave>(
+    eventoInicialId ? 'dryrun' : 'analise'
+  )
+
+  // Se o vendedor já estiver nesta aba e clicar em outra reunião na aba
+  // Eventos, o componente não remonta — daí o efeito.
+  useEffect(() => {
+    if (eventoInicialId) setSecao('dryrun')
+  }, [eventoInicialId])
 
   return (
     <div className="space-y-5">
@@ -61,7 +71,12 @@ export default function InteligenciaHub({
         </div>
       )}
 
-      {secao === 'dryrun' && <DryRunPanel opportunityId={opportunityId} />}
+      {secao === 'dryrun' && (
+        <DryRunPanel
+          opportunityId={opportunityId}
+          eventoInicialId={eventoInicialId}
+        />
+      )}
     </div>
   )
 }
