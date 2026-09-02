@@ -14,6 +14,7 @@
 import { useEffect, useState } from 'react'
 import InteligenciaTab from './InteligenciaTab'
 import DryRunPanel from './DryRunPanel'
+import MockingMeetingPanel from './MockingMeetingPanel'
 
 const SECOES = [
   { chave: 'analise', rotulo: 'Análise & Roteiro' },
@@ -62,13 +63,10 @@ export default function InteligenciaHub({
       {secao === 'analise' && <InteligenciaTab opportunityId={opportunityId} />}
 
       {secao === 'mocking' && (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-10 text-center">
-          <p className="text-sm font-medium text-gray-700">Mocking Meeting</p>
-          <p className="mx-auto mt-1 max-w-md text-xs text-gray-500">
-            Próxima entrega. A IA vai simular como cada persona reage ao seu
-            pitch — objeções, linguagem e postura de cada uma.
-          </p>
-        </div>
+        <MockingMeetingPanel
+          opportunityId={opportunityId}
+          eventoInicialId={eventoInicialId}
+        />
       )}
 
       {secao === 'dryrun' && (
