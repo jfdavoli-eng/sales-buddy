@@ -122,10 +122,29 @@ const ROTULO_TIPO: Record<string, string> = {
   outro: 'Outro',
 }
 
+/** Datas sempre no fuso do vendedor, não no do servidor (Vercel roda em UTC). */
+const FUSO = 'America/Sao_Paulo'
+
 function dataCurta(iso: string): string {
-  const d = new Date(iso)
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`
+  return new Date(iso).toLocaleDateString('pt-BR', { timeZone: FUSO })
+}
+
+/**
+ * Sem a data de hoje, o modelo não distingue passado de futuro: uma reunião
+ * marcada para daqui a dois dias virava "reunião sem feedback registrado".
+ */
+export function hojeExtenso(): string {
+  return new Date().toLocaleDateString('pt-BR', {
+    timeZone: FUSO,
+    weekday: 'long',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+}
+
+export function ehFuturo(iso: string): boolean {
+  return new Date(iso).getTime() > Date.now()
 }
 
 /**
@@ -139,7 +158,8 @@ function eventoParaTexto(
   evento: Record<string, any>,
   nomePorPersonaId: Map<string, string>
 ): string {
-  const cabecalho = `### ${dataCurta(evento.occurred_at)} · ${ROTULO_TIPO[evento.type] ?? evento.type} — ${evento.title}`
+  const agendado = ehFuturo(evento.occurred_at)
+  const cabecalho = `### ${dataCurta(evento.occurred_at)} · ${ROTULO_TIPO[evento.type] ?? evento.type} — ${evento.title}${agendado ? ' [AGENDADO — ainda não aconteceu]' : ''}`
   const linhas: string[] = []
 
   const participantes = (evento.event_personas ?? [])
@@ -151,6 +171,9 @@ function eventoParaTexto(
   }
   if (evento.objective) linhas.push(`- Objetivo: ${evento.objective}`)
   if (evento.description) linhas.push(`- ${evento.description}`)
+  if (agendado && evento.type === 'reuniao' && !evento.feedback) {
+    linhas.push('- Ainda não aconteceu, por isso não há feedback. Não trate como pendência atrasada.')
+  }
   if (evento.feedback) {
     linhas.push(`- Feedback do vendedor depois da reunião: ${evento.feedback}`)
   }
@@ -261,6 +284,8 @@ export async function carregarContexto(
     : '## O QUE O VENDEDOR VENDE\nNão informado. Infira a partir do material anexado e não afirme capacidades que o material não sustenta.'
 
   const texto = [
+    `## DATA DE HOJE\n${hojeExtenso()}. Eventos com data posterior estão agendados e ainda não aconteceram.`,
+    '',
     blocoProduto,
     '',
     '## OPORTUNIDADE',

@@ -205,7 +205,11 @@ export default function AbordagemPanel({ opportunityId }: { opportunityId: strin
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
               <TituloSecao>Próximos passos</TituloSecao>
               <ol className="space-y-2 text-sm text-gray-700">
-                {r.proximos_passos.map((p: any, i: number) => (
+                {r.proximos_passos.map((p: any, i: number) => {
+                  // Versões antigas usavam "responsavel", quase sempre "Vendedor".
+                  const comQuem = String(p.com_quem ?? p.responsavel ?? '').trim()
+                  const parte = /^vendedor$/i.test(comQuem) ? '' : comQuem
+                  return (
                   <li key={i} className="flex gap-2">
                     <span className="font-semibold text-gray-500">{i + 1}.</span>
                     <div className="min-w-0 flex-1">
@@ -218,13 +222,14 @@ export default function AbordagemPanel({ opportunityId }: { opportunityId: strin
                         )}
                       </div>
                       <p className="text-xs text-gray-500">
-                        {p.responsavel && <>Com: {p.responsavel}</>}
-                        {p.responsavel && p.sinal_de_sucesso && ' · '}
+                        {parte && <>Com: {parte}</>}
+                        {parte && p.sinal_de_sucesso && ' · '}
                         {p.sinal_de_sucesso && <>Funcionou se: {p.sinal_de_sucesso}</>}
                       </p>
                     </div>
                   </li>
-                ))}
+                  )
+                })}
               </ol>
             </div>
           )}
