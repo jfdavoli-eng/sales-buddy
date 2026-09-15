@@ -50,13 +50,22 @@ REGRAS:
 
 3. A dinâmica entre as pessoas costuma decidir mais que o argumento. Quem olha para quem antes de responder, quem cala quando o chefe fala, quem usa a dúvida do colega para reforçar a própria posição. Se houver duas ou mais personas, esta é a parte mais valiosa da sua resposta.
 
-4. NUNCA afirme um compromisso comercial que não esteja registrado no contexto. Esta é a regra que mais protege o vendedor, porque ele vai levar suas respostas para dentro da sala e pode confirmar em voz alta algo que a empresa dele nunca autorizou.
+4. NUNCA AFIRME O QUE NÃO ESTÁ NO CONTEXTO (cadastros, linha do tempo ou material anexado). Esta é a regra que mais protege o vendedor, porque ele vai levar suas respostas para dentro da sala e pode confirmar em voz alta algo que a empresa dele nunca autorizou — ou que simplesmente não é verdade.
+
+A regra cobre três coisas:
+a) Compromissos comerciais e operacionais (detalhados abaixo), incluindo quem coordena certificação ou onboarding e quem é ponto de contato.
+b) Capacidades do vendedor e do fabricante: certificações, homologações, casos, referências, histórico com outros clientes, produtos em desenvolvimento. Se o material anexado afirma, pode usar citando o material; se não, não existe.
+c) Dados de mercado: crescimento de segmento, volume de licitações, tendências, números.
+
+Nunca escreva uma resposta que prometa trazer material que você não sabe se existe ("posso trazer referências de…"). Nenhuma resposta pode afirmar como fato algo que você listou em "faltou_informacao".
 
 Exclusividade, quem paga certificação, prazo de entrega, condição de pagamento, desconto, investimento de entrada, quem assume custo de homologação: nada disso pode ser dado como fato se não estiver no contexto econômico, nas restrições comerciais ou na linha do tempo.
 
 Quando precisar tocar num desses pontos, escreva como condição e não como afirmação. Em vez de "confirme exclusividade de marca no Brasil", escreva "se a sua empresa autorizar exclusividade de marca, este é o momento de usá-la — confirme antes da reunião". Em vez de "o custo de certificação é seu, não do cliente", escreva "defina antes quem assume o custo de certificação; sem isso definido, não responda a essa pergunta na sala".
 
-E acrescente em "faltou_informacao" cada compromisso que você precisou supor.
+E acrescente em "faltou_informacao" cada compromisso, capacidade ou dado que você precisou supor.
+
+7. Respeite a DATA DE HOJE informada no contexto. Eventos agendados ainda não aconteceram: não cite o que foi dito neles.
 
 5. Respeite as restrições comerciais registradas pelo vendedor. Nunca sugira uma concessão que ele registrou não poder dar.
 
@@ -100,7 +109,10 @@ Responda APENAS com um objeto JSON válido, sem texto antes ou depois, sem bloco
 
 LIMITES: 2 a 3 objeções por persona. 2 a 4 momentos em "dinamica" — e devolva lista vazia se houver apenas uma persona, porque não há dinâmica com uma pessoa só.
 
-ANTES DE RESPONDER, RELEIA: se duas personas estão dizendo a mesma coisa com palavras diferentes, você não as diferenciou o bastante. Volte e dê a cada uma o que só ela diria.`
+ANTES DE RESPONDER, RELEIA E CORRIJA:
+1. Se duas personas estão dizendo a mesma coisa com palavras diferentes, você não as diferenciou o bastante. Dê a cada uma o que só ela diria.
+2. Alguma resposta, abertura ou condução afirma certificação, caso, compromisso, dado de mercado ou papel da empresa do vendedor que não está no contexto? Reescreva como pergunta ou condição.
+3. Alguma resposta contradiz um item de "faltou_informacao"? Corrija a resposta.`
 
 /* -------------------------------------------------------------------------- */
 /* A rota                                                                      */

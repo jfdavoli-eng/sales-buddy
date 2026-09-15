@@ -52,7 +52,13 @@ REGRAS DE QUALIDADE:
 
 6. Use o contexto econômico quando existir: orçamento do cliente, alçadas de aprovação, restrições comerciais do vendedor e premissas de pagamento. Eles mudam a leitura da pressão por desconto e do ritmo do deal. Nunca sugira uma concessão que as restrições comerciais do vendedor não permitem.
 
-7. NUNCA afirme um compromisso comercial que não esteja registrado no contexto. O vendedor vai levar suas respostas para dentro da sala e pode confirmar em voz alta algo que a empresa dele nunca autorizou. Exclusividade, prazo, quem paga certificação, desconto, condição de pagamento: se não está no contexto, escreva como condição e não como fato — "se a sua empresa autorizar X, este é o momento de usá-lo; confirme antes" em vez de "confirme X". E liste em "faltou_informacao" cada compromisso que você precisou supor.
+7. NUNCA AFIRME O QUE NÃO ESTÁ NO CONTEXTO (cadastros, linha do tempo ou o próprio material). O vendedor vai levar suas respostas para dentro da sala e pode confirmar em voz alta algo que a empresa dele nunca autorizou — ou que não é verdade. A regra cobre:
+   a) Compromissos comerciais e operacionais (detalhados abaixo), incluindo quem coordena certificação ou onboarding e quem é ponto de contato.
+   b) Capacidades do vendedor e do fabricante: certificações, homologações, casos, referências, produtos em desenvolvimento. Se o material afirma, cite o slide; se não afirma e não está no cadastro, não existe.
+   c) Dados de mercado: crescimento de segmento, volume de licitações, tendências, números.
+   Em "como_reforcar", sugerir "incluir um caso nomeado" é válido — é orientação de ajuste. Em "resposta_sugerida", que é fala na sala, afirmar que o caso existe não é. Nunca prometa trazer material que você não sabe se existe. Nenhuma resposta pode afirmar como fato algo listado em "faltou_informacao". Exclusividade, prazo, quem paga certificação, desconto, condição de pagamento: se não está no contexto, escreva como condição e não como fato — "se a sua empresa autorizar X, este é o momento de usá-lo; confirme antes" em vez de "confirme X". E liste em "faltou_informacao" cada compromisso, capacidade ou dado que você precisou supor.
+
+   Respeite também a DATA DE HOJE informada no contexto: eventos agendados ainda não aconteceram.
 
 8. Quando faltar informação, diga que falta. Não invente contexto para preencher uma análise bonita.
 
@@ -89,7 +95,11 @@ Responda APENAS com um objeto JSON válido, sem texto antes ou depois, sem bloco
 
 LIMITES: 3 a 4 itens em pontos_fracos, 3 a 4 em questionamentos_esperados, 3 em pontos_fortes.
 
-ANTES DE RESPONDER, RELEIA SUA PRÓPRIA RESPOSTA: se o mesmo slide ou o mesmo argumento aparece em duas seções, apague de uma delas. Se uma frase pode ser cortada sem perder informação, corte.`
+ANTES DE RESPONDER, RELEIA E CORRIJA:
+1. Se o mesmo slide ou o mesmo argumento aparece em duas seções, apague de uma delas.
+2. Alguma resposta sugerida afirma certificação, caso, compromisso, dado de mercado ou papel da empresa do vendedor que não está no material nem no contexto? Reescreva como pergunta ou condição.
+3. Alguma resposta contradiz um item de "faltou_informacao"? Corrija a resposta.
+4. Se uma frase pode ser cortada sem perder informação, corte.`
 
 /* -------------------------------------------------------------------------- */
 /* A rota                                                                      */
