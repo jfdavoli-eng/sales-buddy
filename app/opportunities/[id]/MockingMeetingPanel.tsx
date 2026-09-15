@@ -45,19 +45,10 @@ function rotularPersona(p: any, i: number): string {
  * caricatura, não simulação.
  */
 function temPerfil(p: any): boolean {
-  const ignorar = new Set([
-    'id',
-    'opportunity_id',
-    'organization_id',
-    'created_at',
-    'updated_at',
-    'name',
-    'nome',
-    'full_name',
-    'contact_name',
-  ])
-  return Object.entries(p).some(
-    ([k, v]) => !ignorar.has(k) && v !== null && v !== '' && v !== undefined
+  // Só cargo e experiência pessoal contam. O perfil de influência sempre vem
+  // preenchido (padrão "neutro"), então contá-lo tornava o alerta inútil.
+  return Boolean(
+    String(p.job_title ?? '').trim() || String(p.personal_experience ?? '').trim()
   )
 }
 

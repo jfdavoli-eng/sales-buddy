@@ -12,12 +12,12 @@
  */
 
 import { useEffect, useState } from 'react'
-import InteligenciaTab from './InteligenciaTab'
+import AbordagemPanel from './AbordagemPanel'
 import DryRunPanel from './DryRunPanel'
 import MockingMeetingPanel from './MockingMeetingPanel'
 
 const SECOES = [
-  { chave: 'analise', rotulo: 'Análise & Roteiro' },
+  { chave: 'abordagem', rotulo: 'Abordagem & Próximos Passos' },
   { chave: 'mocking', rotulo: 'Mocking Meeting' },
   { chave: 'dryrun', rotulo: 'Dry Run' },
 ] as const
@@ -32,7 +32,7 @@ export default function InteligenciaHub({
   eventoInicialId?: string | null
 }) {
   const [secao, setSecao] = useState<Chave>(
-    eventoInicialId ? 'dryrun' : 'analise'
+    eventoInicialId ? 'dryrun' : 'abordagem'
   )
 
   // Se o vendedor já estiver nesta aba e clicar em outra reunião na aba
@@ -60,7 +60,7 @@ export default function InteligenciaHub({
         ))}
       </div>
 
-      {secao === 'analise' && <InteligenciaTab opportunityId={opportunityId} />}
+      {secao === 'abordagem' && <AbordagemPanel opportunityId={opportunityId} />}
 
       {secao === 'mocking' && (
         <MockingMeetingPanel

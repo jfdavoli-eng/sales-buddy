@@ -5,7 +5,6 @@ import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 import CadastrosTab from './CadastrosTab'
 import EventosTab from './EventosTab'
-import InteligenciaTab from './InteligenciaTab'
 import InteligenciaHub from './InteligenciaHub'
 import ContextoTab from './ContextoTab'
 
