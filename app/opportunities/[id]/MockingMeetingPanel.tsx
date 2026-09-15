@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase-client'
+import NovaPersonaRapida from './NovaPersonaRapida'
 import {
   useHistoricoIA,
   NavegacaoVersoes,
@@ -271,6 +272,15 @@ export default function MockingMeetingPanel({
     }
   }
 
+  /** D8: persona criada aqui entra na lista já marcada. */
+  function personaCriada(p: any) {
+    setPersonas((atual) => [
+      ...atual,
+      { id: p.id, rotulo: rotularPersona(p, atual.length), temPerfil: temPerfil(p) },
+    ])
+    setSelecionadas((atual) => [...atual, p.id])
+  }
+
   function alternar(id: string) {
     setSelecionadas((atual) =>
       atual.includes(id) ? atual.filter((p) => p !== id) : [...atual, id]
@@ -303,9 +313,14 @@ export default function MockingMeetingPanel({
               Nenhuma persona cadastrada nesta oportunidade.
             </p>
             <p className="mt-1 text-xs text-gray-500">
-              Cadastre em Cadastros › Personas. Sem gente na sala não há reunião
-              para simular.
+              Sem gente na sala não há reunião para simular. Cadastre agora:
             </p>
+            <div className="mt-3 flex justify-center">
+              <NovaPersonaRapida
+                opportunityId={opportunityId}
+                onCriada={personaCriada}
+              />
+            </div>
           </div>
         ) : (
           <div className="mt-4 space-y-4">
@@ -353,6 +368,10 @@ export default function MockingMeetingPanel({
                     </button>
                   )
                 })}
+                <NovaPersonaRapida
+                  opportunityId={opportunityId}
+                  onCriada={personaCriada}
+                />
               </div>
             </div>
 

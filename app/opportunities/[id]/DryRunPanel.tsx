@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase-client'
+import NovaPersonaRapida from './NovaPersonaRapida'
 import {
   useHistoricoIA,
   NavegacaoVersoes,
@@ -230,6 +231,15 @@ export default function DryRunPanel({
     }
   }
 
+  /** D8: persona criada aqui entra na lista já marcada. */
+  function personaCriada(p: any) {
+    setPersonas((atual) => [
+      ...atual,
+      { id: p.id, rotulo: rotularPersona(p, atual.length) },
+    ])
+    setPersonasSelecionadas((atual) => [...atual, p.id])
+  }
+
   function alternarPersona(id: string) {
     setPersonasSelecionadas((atual) =>
       atual.includes(id) ? atual.filter((p) => p !== id) : [...atual, id]
@@ -311,7 +321,6 @@ export default function DryRunPanel({
               )}
             </div>
 
-            {personas.length > 0 && (
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   Quem vai receber este material
@@ -334,9 +343,12 @@ export default function DryRunPanel({
                       </button>
                     )
                   })}
+                  <NovaPersonaRapida
+                    opportunityId={opportunityId}
+                    onCriada={personaCriada}
+                  />
                 </div>
               </div>
-            )}
 
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">

@@ -17,6 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase-client'
+import NovaPersonaRapida from './NovaPersonaRapida'
 
 /* -------------------------------------------------------------------------- */
 /* Tipos de evento — a lista vive aqui, não no banco                          */
@@ -305,6 +306,15 @@ export default function EventosTab({
     await carregar()
   }
 
+  /** D8: persona criada no próprio formulário entra na lista já marcada. */
+  function personaCriada(p: any) {
+    setPersonas((atual) => [
+      ...atual,
+      { id: p.id, rotulo: rotularPersona(p, atual.length) },
+    ])
+    setParticipantes((atual) => [...atual, p.id])
+  }
+
   function alternarParticipante(id: string) {
     setParticipantes((atual) =>
       atual.includes(id) ? atual.filter((p) => p !== id) : [...atual, id]
@@ -385,7 +395,6 @@ export default function EventosTab({
               </p>
             </div>
 
-            {personas.length > 0 && (
               <div>
                 <label className="block text-xs text-gray-500 mb-1">
                   Participantes
@@ -408,9 +417,13 @@ export default function EventosTab({
                       </button>
                     )
                   })}
+                  <NovaPersonaRapida
+                    opportunityId={opportunityId}
+                    onCriada={personaCriada}
+                    tamanho="xs"
+                  />
                 </div>
               </div>
-            )}
           </>
         )}
 
