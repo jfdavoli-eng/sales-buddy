@@ -83,29 +83,33 @@ export default function DashboardPage() {
           <p className="text-sm text-gray-500 mb-4">
             {orgName} · {profile?.role === 'gestor' ? 'Gestor' : 'Vendedor'}
           </p>
-
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-900">
-            Autenticação funcionando. Organização e perfil criados com sucesso no banco de dados.
-          </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-            Próximos passos
-          </p>
-          <ul className="text-sm text-gray-600 space-y-2">
-            <li>Lista de oportunidades</li>
-            <li>Formulário de nova oportunidade</li>
-            <li>Detalhe da oportunidade com abas</li>
-            <li>Features de IA</li>
-          </ul>
-        </div>
+        <Link
+          href="/opportunities"
+          className="block w-full rounded-xl bg-[#1B3A6B] py-3 text-center text-sm font-medium text-white transition-colors hover:bg-[#152d54]"
+        >
+          Minhas oportunidades
+        </Link>
+
+        <Link
+          href="/opportunities/new"
+          className="mt-3 block w-full rounded-xl border border-[#1B3A6B] py-3 text-center text-sm font-medium text-[#1B3A6B] transition-colors hover:bg-blue-50"
+        >
+          Nova oportunidade
+        </Link>
+
         <Link
           href="/configuracoes"
-          className="block w-full mt-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium text-center hover:bg-gray-50 transition-colors"
+          className="mt-3 block w-full rounded-xl border border-gray-300 py-2.5 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
         >
           Configurações
         </Link>
+
+        <p className="mt-3 text-center text-xs text-gray-400">
+          Descreva o que você vende em Configurações: esse texto alimenta todas as análises de IA.
+        </p>
+
         <button
           onClick={handleLogout}
           className="w-full mt-4 py-2.5 border border-red-200 text-red-700 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors"
