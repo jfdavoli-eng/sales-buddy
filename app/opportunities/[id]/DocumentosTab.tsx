@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase-client'
 
 type Persona = {
@@ -69,7 +69,12 @@ function sanitizeFileName(name: string): string {
 }
 
 export default function DocumentosTab({ opportunityId }: Props) {
-  const supabase = createClient()
+  // useMemo é obrigatório aqui: sem ele, cada render criava um cliente novo,
+  // o que recriava loadDocuments, o que disparava o efeito de novo — e a
+  // limpeza do efeito anterior marcava `active = false` antes do
+  // `setLoading(false)`. Resultado: "Carregando…" para sempre, mesmo com os
+  // documentos já na tela.
+  const supabase = useMemo(() => createClient(), [])
 
   const [orgId, setOrgId] = useState<string | null>(null)
   const [personas, setPersonas] = useState<Persona[]>([])
@@ -118,13 +123,22 @@ export default function DocumentosTab({ opportunityId }: Props) {
         if (active) setOrgId(profile?.organization_id ?? null)
       }
 
+      // A coluna é full_name. Com 'name', a consulta falhava em silêncio e o
+      // seletor "Associar a" ficava sempre vazio.
       const { data: personaRows } = await supabase
         .from('personas')
-        .select('id, name')
+        .select('id, full_name')
         .eq('opportunity_id', opportunityId)
-        .order('name')
+        .order('full_name')
 
-      if (active) setPersonas(personaRows ?? [])
+      if (active) {
+        setPersonas(
+          (personaRows ?? []).map((p: { id: string; full_name: string }) => ({
+            id: p.id,
+            name: p.full_name,
+          }))
+        )
+      }
 
       await loadDocuments()
       if (active) setLoading(false)
